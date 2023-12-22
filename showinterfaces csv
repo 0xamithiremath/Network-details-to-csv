@@ -1,0 +1,54 @@
+import re
+import csv
+
+# Function to parse the "show interfaces" output from a text file and extract the desired information
+def parse_interface_data_from_file(filename):
+    interface_data = []
+    current_interface = {}
+    
+    with open(filename, 'r') as file:
+        lines = file.readlines()
+
+    for line in lines:
+        if line.startswith("Interface"):
+            if current_interface:
+                interface_data.append(current_interface)
+            current_interface = {"Interface": line.split()[1]}
+        elif line.startswith("Description:"):
+            current_interface["Description"] = line.split(":")[1].strip()
+        elif "line protocol is" in line:
+            status_info = re.search(r"(\w+) is (\w+), line protocol is (\w+)", line)
+            current_interface["Link Status"] = status_info.group(1)
+            current_interface["Protocol Status"] = status_info.group(3)
+        elif line.startswith("Internet address"):
+            current_interface["IP Address"] = line.split()[3]
+        elif "BW " in line:
+            bw_info = re.search(r"BW (\d+) Kbit", line)
+            current_interface["Bandwidth"] = bw_info.group(1)
+        elif line.startswith("MTU "):
+            current_interface["MTU"] = line.split()[1]
+        elif "Last input" in line:
+            last_input_info = re.search(r"Last input (\S+),", line)
+            current_interface["Last Input"] = last_input_info.group(1)
+
+    if current_interface:
+        interface_data.append(current_interface)
+
+    return interface_data
+
+# Function to export the data to a CSV file
+def export_to_csv(data, filename):
+    with open(filename, mode='w', newline='') as file:
+        fieldnames = ["Interface", "Description", "Link Status", "Protocol Status", "IP Address", "Bandwidth", "MTU", "Last Input"]
+        writer = csv.DictWriter(file, fieldnames=fieldnames)
+        writer.writeheader()
+        for row in data:
+            writer.writerow(row)
+
+if __name__ == "__main__":
+    input_filename = "show_interfaces_output.txt"
+    output_filename = "interface_data.csv"
+
+    interface_data = parse_interface_data_from_file(input_filename)
+    export_to_csv(interface_data, output_filename)
+    print(f"Data exported to {output_filename}")
