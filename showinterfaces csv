@@ -18,18 +18,22 @@ def parse_interface_data_from_file(filename):
             current_interface["Description"] = line.split(":")[1].strip()
         elif "line protocol is" in line:
             status_info = re.search(r"(\w+) is (\w+), line protocol is (\w+)", line)
-            current_interface["Link Status"] = status_info.group(1)
-            current_interface["Protocol Status"] = status_info.group(3)
+            if status_info:
+                current_interface["Link Status"] = status_info.group(1)
+                current_interface["Protocol Status"] = status_info.group(3)
+            else:
+                current_interface["Link Status"] = "N/A"
+                current_interface["Protocol Status"] = "N/A"
         elif line.startswith("Internet address"):
             current_interface["IP Address"] = line.split()[3]
         elif "BW " in line:
             bw_info = re.search(r"BW (\d+) Kbit", line)
-            current_interface["Bandwidth"] = bw_info.group(1)
+            current_interface["Bandwidth"] = bw_info.group(1) if bw_info else "N/A"
         elif line.startswith("MTU "):
             current_interface["MTU"] = line.split()[1]
         elif "Last input" in line:
             last_input_info = re.search(r"Last input (\S+),", line)
-            current_interface["Last Input"] = last_input_info.group(1)
+            current_interface["Last Input"] = last_input_info.group(1) if last_input_info else "N/A"
 
     if current_interface:
         interface_data.append(current_interface)
