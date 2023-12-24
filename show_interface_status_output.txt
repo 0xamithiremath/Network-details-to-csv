@@ -1,7 +1,0 @@
-Switch# show interface status
-
-Port      Name               Status       Vlan       Duplex  Speed Type
-Gi1/0/1   Server-1           connected    10         full   1000 1000BaseTX
-Gi1/0/2   PC-1               notconnect   20         auto   auto No Gbic
-Gi1/0/3   Printer-1          connected    30         full   1000 1000BaseTX
-Gi1/0/4   PC-2               connected    20         full   1000 1000BaseTX
