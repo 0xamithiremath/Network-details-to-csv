@@ -1,0 +1,61 @@
+import re
+import csv
+
+# Define the input and output file paths
+input_file_path = "show_interfaces.txt"
+output_file_path = "interface_details.csv"
+
+# Initialize a list to store interface details
+interface_details = []
+
+# Define a regular expression pattern to match relevant lines in the show interfaces output
+pattern = re.compile(r'^\s*([A-Za-z]+\d+/\d+/\d+|Ethernet \d+)\s+is (.*),\s*line protocol is (.*)(?:\s*\(([^)]+)\))?\s*$')
+bw_pattern = re.compile(r'BW (\d+) Kbit')
+
+# Open the input file and read its content
+with open(input_file_path, 'r') as input_file:
+    interface_info = {}
+    capture_bw = False
+    for line in input_file:
+        line = line.strip()
+        match = pattern.match(line)
+        bw_match = bw_pattern.search(line)
+        if match:
+            if interface_info:
+                interface_details.append(interface_info)
+            interface_info = {
+                "Interface Number": match.group(1),
+                "Description": match.group(4) if match.group(4) else "",
+                "Line Protocol": match.group(3),
+                "Last Input": "",
+                "MTU": "",
+                "BW": "",
+                "IP Address": ""
+            }
+            capture_bw = False
+        elif capture_bw and bw_match:
+            interface_info["BW"] = bw_match.group(1)
+            capture_bw = False
+        elif line.startswith("MTU "):
+            interface_info["MTU"] = line.split()[1]
+        elif line.startswith("BW "):
+            capture_bw = True
+        elif line.startswith("Last input"):
+            # Capture the next full word or number (may contain ":")
+            last_input_match = re.search(r'\S+', line.split("Last input")[1])
+            if last_input_match:
+                interface_info["Last Input"] = last_input_match.group(0)
+        elif line.startswith("Internet address is "):
+            interface_info["IP Address"] = line.split()[3]
+
+# Append the last interface_info to the list
+if interface_info:
+    interface_details.append(interface_info)
+
+# Export interface details to a CSV file
+with open(output_file_path, 'w', newline='') as output_file:
+    csv_writer = csv.DictWriter(output_file, fieldnames=["Interface Number", "Description", "Line Protocol", "Last Input", "MTU", "BW", "IP Address"])
+    csv_writer.writeheader()
+    csv_writer.writerows(interface_details)
+
+print(f"Interface details have been exported to {output_file_path}.")
