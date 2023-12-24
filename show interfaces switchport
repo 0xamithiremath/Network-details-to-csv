@@ -1,0 +1,38 @@
+import re
+import csv
+
+# Read the input file with the show interfaces switchport output
+with open('switchport_output.txt', 'r') as file:
+    switchport_output = file.read()
+
+# Define regular expressions to capture the desired information
+interface_pattern = re.compile(r'Name:(\S+)')
+switchport_pattern = re.compile(r'Switchport:\s+(\w+)')
+mode_pattern = re.compile(r'Operational Mode:\s+(\w+)')
+trunking_pattern = re.compile(r'Negotiation of Trunking:\s+(\w+)')
+access_vlan_pattern = re.compile(r'Access Mode VLAN:\s+([\d\w\(\)\-]+)')
+voice_vlan_pattern = re.compile(r'Voice VLAN:\s+(\w+)')
+
+# Find all matches using regular expressions
+interfaces = interface_pattern.findall(switchport_output)
+switchport_status = switchport_pattern.findall(switchport_output)
+operational_mode = mode_pattern.findall(switchport_output)
+trunking = trunking_pattern.findall(switchport_output)
+access_vlan = access_vlan_pattern.findall(switchport_output)
+voice_vlan = voice_vlan_pattern.findall(switchport_output)
+
+# Create a list of lists to store the data
+data = []
+for i in range(len(interfaces)):
+    data.append([interfaces[i].strip(), switchport_status[i].strip(), operational_mode[i].strip(), trunking[i].strip(), access_vlan[i].strip(), voice_vlan[i].strip()])
+
+# Write the data to a CSV file
+with open('switchport_details.csv', 'w', newline='') as csv_file:
+    writer = csv.writer(csv_file)
+    # Write header row
+    writer.writerow(['Interface', 'Switchport Status', 'Operational Mode', 'Negotiation of Trunking', 'Access Mode VLAN', 'Voice VLAN'])
+    # Write data rows
+    for row in data:
+        writer.writerow(row)
+
+print("CSV file 'switchport_details.csv' has been created.")
