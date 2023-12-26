@@ -1,11 +1,11 @@
 import re
 import csv
 
-def parse_interfaces_with_last_input(file_contents):
+def parse_interfaces_with_speed(file_contents):
     """
     Parses the contents of the 'show interfaces' command output from a Cisco switch
-    and extracts key information for each interface, including "Last input",
-    with separate columns for the interface name, interface status, and link status.
+    and extracts key information for each interface, including "Last input" and "speed",
+    with separate columns for the interface name, interface status, link status, last input, and speed.
     
     Args:
     file_contents (str): The full text of the 'show interfaces' command output.
@@ -29,7 +29,8 @@ def parse_interfaces_with_last_input(file_contents):
         'encapsulation': r'Encapsulation (\S+)',
         'loopback': r'loopback not set',
         'keepalive': r'Keepalive not set',
-        'duplex': r'Unknown duplex, Unknown Speed, (\S+)',
+        'speed': r', (Auto-speed|\d+Mbit\/s|\d+Mb\/s),',
+        'duplex': r'(Auto-duplex|\S+ duplex)',
         'arp_type': r'ARP type: (\S+), ARP Timeout (\S+)',
         'input_rate': r'5 minute input rate (\d+) bits\/sec',
         'output_rate': r'5 minute output rate (\d+) bits\/sec',
@@ -73,20 +74,20 @@ file_path = 'C:\\Users\\amith\\Desktop\\Py\\show interfaces.txt'
 # Reading the file and parsing the contents
 with open(file_path, 'r') as file:
     file_contents = file.read()
-parsed_interfaces_with_last_input = parse_interfaces_with_last_input(file_contents)
+parsed_interfaces_with_speed = parse_interfaces_with_speed(file_contents)
 
-# Define the new columns, including separate columns for interface name, admin status, link status, and last input
-csv_columns_with_last_input = ['interface_name', 'admin_status', 'link_status', 'last_input'] + \
-    [col for col in parsed_interfaces_with_last_input[0].keys() if col not in {'interface_name', 'admin_status', 'link_status', 'last_input'}]
+# Define the new columns, including separate columns for interface name, admin status, link status, last input, and speed
+csv_columns_with_speed = ['interface_name', 'admin_status', 'link_status', 'last_input', 'speed'] + \
+    [col for col in parsed_interfaces_with_speed[0].keys() if col not in {'interface_name', 'admin_status', 'link_status', 'last_input', 'speed'}]
 
 # Replace 'csv_file_path' with the desired path for your CSV file
 csv_file_path = 'C:\\Users\\amith\\Desktop\\Py\\show_interfaces.csv'
 
 # Writing the parsed data to a CSV file with separate columns for interface details
 with open(csv_file_path, mode='w', newline='') as file:
-    writer = csv.DictWriter(file, fieldnames=csv_columns_with_last_input)
+    writer = csv.DictWriter(file, fieldnames=csv_columns_with_speed)
     writer.writeheader()
-    for data in parsed_interfaces_with_last_input:
+    for data in parsed_interfaces_with_speed:
         writer.writerow(data)
 
 print(f"Data parsed and written to {csv_file_path}")
