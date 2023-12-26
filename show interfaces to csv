@@ -1,61 +1,92 @@
 import re
 import csv
 
-# Define the input and output file paths
-input_file_path = "show_interfaces.txt"
-output_file_path = "interface_details.csv"
+def parse_interfaces_with_last_input(file_contents):
+    """
+    Parses the contents of the 'show interfaces' command output from a Cisco switch
+    and extracts key information for each interface, including "Last input",
+    with separate columns for the interface name, interface status, and link status.
+    
+    Args:
+    file_contents (str): The full text of the 'show interfaces' command output.
+    
+    Returns:
+    list of dict: A list where each element is a dictionary containing the extracted
+                  information for each interface.
+    """
+    # Splitting the file contents into sections for each interface
+    interface_sections = re.split(r'\n(?=\S)', file_contents)
+    
+    # Pattern to extract the relevant information
+    patterns = {
+        'hardware': r'Hardware is (\S+), address is (\S+)',
+        'mtu': r'MTU (\d+) bytes',
+        'bandwidth': r'BW (\d+) Kbit\/sec',
+        'delay': r'DLY (\d+) usec',
+        'reliability': r'reliability (\d+)\/(\d+)',
+        'txload': r'txload (\d+)\/(\d+)',
+        'rxload': r'rxload (\d+)\/(\d+)',
+        'encapsulation': r'Encapsulation (\S+)',
+        'loopback': r'loopback not set',
+        'keepalive': r'Keepalive not set',
+        'duplex': r'Unknown duplex, Unknown Speed, (\S+)',
+        'arp_type': r'ARP type: (\S+), ARP Timeout (\S+)',
+        'input_rate': r'5 minute input rate (\d+) bits\/sec',
+        'output_rate': r'5 minute output rate (\d+) bits\/sec',
+        'input_errors': r'(\d+) input errors',
+        'output_errors': r'(\d+) output errors',
+        'last_input': r'Last input (\S+),'
+    }
 
-# Initialize a list to store interface details
-interface_details = []
+    # List to hold the extracted data for each interface
+    parsed_data = []
 
-# Define a regular expression pattern to match relevant lines in the show interfaces output
-pattern = re.compile(r'^\s*([A-Za-z]+\d+/\d+/\d+|Ethernet \d+)\s+is (.*),\s*line protocol is (.*)(?:\s*\(([^)]+)\))?\s*$')
-bw_pattern = re.compile(r'BW (\d+) Kbit')
+    # Process each interface section
+    for section in interface_sections:
+        data = {}
+        interface_details_match = re.search(r'(\S+) is (up|down|administratively down), line protocol is (up|down)', section, re.MULTILINE)
+        if interface_details_match:
+            data['interface_name'] = interface_details_match.group(1)
+            data['admin_status'] = interface_details_match.group(2)
+            data['link_status'] = interface_details_match.group(3)
+        else:
+            # If no match is found, we'll continue to the next section as it might not be an interface description
+            continue
+        
+        # Extract other details
+        for key, pattern in patterns.items():
+            match = re.search(pattern, section, re.MULTILINE)
+            if match:
+                if 'loopback' in key or 'keepalive' in key:  # These patterns do not have match groups
+                    data[key] = 'not set'
+                else:
+                    data[key] = match.group(1)
+            else:
+                data[key] = None
+        parsed_data.append(data)
 
-# Open the input file and read its content
-with open(input_file_path, 'r') as input_file:
-    interface_info = {}
-    capture_bw = False
-    for line in input_file:
-        line = line.strip()
-        match = pattern.match(line)
-        bw_match = bw_pattern.search(line)
-        if match:
-            if interface_info:
-                interface_details.append(interface_info)
-            interface_info = {
-                "Interface Number": match.group(1),
-                "Description": match.group(4) if match.group(4) else "",
-                "Line Protocol": match.group(3),
-                "Last Input": "",
-                "MTU": "",
-                "BW": "",
-                "IP Address": ""
-            }
-            capture_bw = False
-        elif capture_bw and bw_match:
-            interface_info["BW"] = bw_match.group(1)
-            capture_bw = False
-        elif line.startswith("MTU "):
-            interface_info["MTU"] = line.split()[1]
-        elif line.startswith("BW "):
-            capture_bw = True
-        elif line.startswith("Last input"):
-            # Capture the next full word or number (may contain ":")
-            last_input_match = re.search(r'\S+', line.split("Last input")[1])
-            if last_input_match:
-                interface_info["Last Input"] = last_input_match.group(0)
-        elif line.startswith("Internet address is "):
-            interface_info["IP Address"] = line.split()[3]
+    return parsed_data
 
-# Append the last interface_info to the list
-if interface_info:
-    interface_details.append(interface_info)
+# Replace 'file_path' with the path to your text file
+file_path = 'C:\\Users\\amith\\Desktop\\Py\\show interfaces.txt'
 
-# Export interface details to a CSV file
-with open(output_file_path, 'w', newline='') as output_file:
-    csv_writer = csv.DictWriter(output_file, fieldnames=["Interface Number", "Description", "Line Protocol", "Last Input", "MTU", "BW", "IP Address"])
-    csv_writer.writeheader()
-    csv_writer.writerows(interface_details)
+# Reading the file and parsing the contents
+with open(file_path, 'r') as file:
+    file_contents = file.read()
+parsed_interfaces_with_last_input = parse_interfaces_with_last_input(file_contents)
 
-print(f"Interface details have been exported to {output_file_path}.")
+# Define the new columns, including separate columns for interface name, admin status, link status, and last input
+csv_columns_with_last_input = ['interface_name', 'admin_status', 'link_status', 'last_input'] + \
+    [col for col in parsed_interfaces_with_last_input[0].keys() if col not in {'interface_name', 'admin_status', 'link_status', 'last_input'}]
+
+# Replace 'csv_file_path' with the desired path for your CSV file
+csv_file_path = 'C:\\Users\\amith\\Desktop\\Py\\show_interfaces.csv'
+
+# Writing the parsed data to a CSV file with separate columns for interface details
+with open(csv_file_path, mode='w', newline='') as file:
+    writer = csv.DictWriter(file, fieldnames=csv_columns_with_last_input)
+    writer.writeheader()
+    for data in parsed_interfaces_with_last_input:
+        writer.writerow(data)
+
+print(f"Data parsed and written to {csv_file_path}")
