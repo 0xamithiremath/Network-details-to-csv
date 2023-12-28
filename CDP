@@ -1,0 +1,27 @@
+import csv
+import re
+
+def parse_cdp_neighbors(input_file, output_csv):
+    
+    cdp_regex = re.compile(
+        r"Device ID: (?P<device_id>.+?)\s+?"
+        r"Entry address\(es\):.*?IP address: (?P<ip_address>\S+).*?"
+        r"Platform: (?P<platform>.+?),\s+?Capabilities: (?P<capabilities>.+?)\s+?"
+        r"Interface: (?P<local_interface>\S+),\s+?Port ID \(outgoing port\): (?P<port_id>\S+).*?"
+        r"Holdtime : (?P<holdtime>\d+) sec", re.S)
+
+    with open(input_file, 'r') as file:
+        text = file.read()
+
+    matches = cdp_regex.finditer(text)
+    
+    with open(output_csv, 'w', newline='') as csvfile:
+        fieldnames = ['device_id', 'ip_address', 'platform', 'capabilities', 'local_interface', 'port_id', 'holdtime']
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+        writer.writeheader()
+
+        for match in matches:
+            writer.writerow(match.groupdict())
+input_file_path = "C:\\Users\\amith\\Desktop\\Py\\CDP\\CDP.txt"  # Replace with your actual input file path
+output_file_path = "C:\\Users\\amith\\Desktop\\Py\\CDP\\CDP.csv"  # Replace with your actual output file path
+parse_cdp_neighbors(input_file_path, output_file_path)
