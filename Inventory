@@ -1,0 +1,45 @@
+import csv
+
+# Define paths to the input and output files
+input_file_path = 'C:\\Users\\amith\\Desktop\\Py\\Inventory\\Inventory.txt'  # Replace with your input file path
+output_file_path = 'C:\\Users\\amith\\Desktop\\Py\\Inventory\\Inventory.csv'  # Replace with your output file path
+
+def parse_show_inventory(contents):
+    """Parse the 'show inventory' output and return a list of dictionaries with the details."""
+    inventory_items = []
+    item = {}
+    for line in contents.split('\n'):
+        if "NAME: " in line:  
+
+            if item:
+                inventory_items.append(item)
+            item = {key: '' for key in ['NAME', 'DESCR', 'PID', 'VID', 'SN']}  
+            parts = line.split(',')
+            for part in parts:
+                if ':' in part:
+                    key, value = part.split(':', 1)
+                    item[key.strip()] = value.strip().strip('"')
+        elif item:  
+            parts = line.split(',')
+            for part in parts:
+                if ':' in part:
+                    key, value = part.split(':', 1)
+                    item[key.strip()] = value.strip().strip('"')
+
+    if item:
+        inventory_items.append(item)
+    return inventory_items
+
+with open(input_file_path, 'r') as file:
+    file_contents = file.read()
+
+inventory_items = parse_show_inventory(file_contents)
+
+with open(output_file_path, 'w', newline='') as csvfile:
+    fieldnames = ['NAME', 'DESCR', 'PID', 'VID', 'SN']
+    writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+    writer.writeheader()
+    for item in inventory_items:
+        writer.writerow(item)
+
+print(f"Inventory details exported to {output_file_path}")
