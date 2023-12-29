@@ -1,0 +1,47 @@
+import csv
+import re
+
+def parse_etherchannel_summary(input_file):
+    with open(input_file, 'r') as file:
+        lines = file.readlines()
+
+    pattern = r'^(\d+)\s+(\w+)\((\w+)\)\s+(\w+)\s+(.*)$'
+    data = []
+
+    for line in lines:
+        match = re.match(pattern, line.strip())
+        if match:
+            group = match.group(1)
+            port_channel = match.group(2)
+            status = match.group(3)
+            protocol = match.group(4)
+            ports = match.group(5).split()  
+
+            row = [group, port_channel, status, protocol] + ports
+            data.append(row)
+    
+    return data
+
+def export_to_csv(data, output_file):
+
+    header = ['Group', 'Port-channel', 'Status', 'Protocol']
+    max_ports = max(len(row) - 4 for row in data)  
+    header.extend(f'Port{i}' for i in range(1, max_ports + 1))  
+    
+    with open(output_file, 'w', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerow(header)
+        for row in data:
+            if len(row) < len(header):
+                row.extend([''] * (len(header) - len(row)))  
+            writer.writerow(row)
+
+# Paths to the input and output files
+input_file_path = 'C:\\Users\\amith\\Desktop\\Py\\Etherchannel\\Etherchannel.txt'  # Replace with your input file path
+output_file_path = 'C:\\Users\\amith\\Desktop\\Py\\Etherchannel\\Etherchannel.csv' # Replace with your output file path
+
+
+data = parse_etherchannel_summary(input_file_path)
+export_to_csv(data, output_file_path)
+
+print(f"Data exported to {output_file_path}")
