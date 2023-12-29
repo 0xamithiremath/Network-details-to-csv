@@ -1,0 +1,35 @@
+import re
+import csv
+
+# Paths to the input and output files
+input_file_path = 'C:\\Users\\amith\\Desktop\\Py\\Version\\Version.txt'
+output_file_path = 'C:\\Users\\amith\\Desktop\\Py\\Version\\Version.csv'
+
+with open(input_file_path, 'r') as file:
+    data = file.read()
+
+patterns = {
+    'software_version': r'Cisco IOS Software, .+ Version (\S+),',
+    'system_uptime': r'uptime is (.+)',
+    'system_image_file': r'System image file is "(.+)"',
+    'processor_info': r'(\S+) processor .+ with (\d+)K bytes of memory\.',
+    'processor_board_id': r'Processor board ID (\S+)',
+    'interfaces': r'(\d+) Virtual Ethernet interface|(\d+) FastEthernet interfaces|(\d+) Gigabit Ethernet interfaces',
+    'base_mac_address': r'Base ethernet MAC Address\s+:\s+(\S+)',
+    'model_number': r'Model number\s+:\s+(\S+)',
+    'system_serial_number': r'System serial number\s+:\s+(\S+)',
+    'software_image': r'SW Image\s+\n-*\s+\S+\s+\S+\s+(\S+)',
+}
+
+extracted_data = {}
+for key, pattern in patterns.items():
+    match = re.search(pattern, data, re.MULTILINE)
+    if match:
+        extracted_data[key] = match.group(1)
+
+with open(output_file_path, 'w', newline='') as csvfile:
+    writer = csv.DictWriter(csvfile, fieldnames=extracted_data.keys())
+    writer.writeheader()
+    writer.writerow(extracted_data)
+
+print(f"Data extracted and saved to {output_file_path}")
