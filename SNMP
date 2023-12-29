@@ -1,0 +1,69 @@
+import csv
+import re
+
+def parse_snmp_output(file_path):
+    
+    with open(file_path, 'r') as file:
+        content = file.read()
+
+    lines = content.splitlines()
+
+    groupname_re = r"groupname:\s*(\S+)"
+    security_model_re = r"security model:(\S+)"
+    readview_re = r"readview\s*:\s*(.+?)(?:\s{2,}|$)"
+    writeview_re = r"writeview:\s*(.+?)(?:\s{2,}|$)"
+    notifyview_re = r"notifyview:\s*(.+?)(?:\s{2,}|$)"
+    row_status_re = r"row status:\s*(\S+)"
+
+    groups = []
+
+    group_data = []
+    current_group = ""
+    for line in lines:
+        if 'groupname:' in line:
+            if current_group:
+                group_data.append(current_group)
+            current_group = line
+        else:
+            current_group += ' ' + line
+    group_data.append(current_group)  
+
+    for group in group_data:
+        groupname = re.search(groupname_re, group)
+        security_model = re.search(security_model_re, group)
+        readview = re.search(readview_re, group)
+        writeview = re.search(writeview_re, group)
+        notifyview = re.search(notifyview_re, group)
+        row_status = re.search(row_status_re, group)
+
+        if groupname and security_model and readview and writeview and notifyview and row_status:
+            groups.append({
+                "groupname": groupname.group(1),
+                "security model": security_model.group(1),
+                "readview": readview.group(1),
+                "writeview": writeview.group(1) if writeview else "<no writeview specified>",
+                "notifyview": notifyview.group(1) if notifyview else "<no notifyview specified>",
+                "row status": row_status.group(1)
+            })
+
+    return groups
+
+def export_to_csv(data, output_file_path):
+    """
+    Export the parsed SNMP data to a CSV file.
+    """
+    headers = ["groupname", "security model", "readview", "writeview", "notifyview", "row status"]
+
+    with open(output_file_path, 'w', newline='') as file:
+        writer = csv.DictWriter(file, fieldnames=headers)
+        writer.writeheader()
+        for row in data:
+            writer.writerow(row)
+
+# Set the paths to your files here
+input_file_path = "C:\\Users\\amith\\Desktop\\Py\\SNMP\\SNMP.txt"  # Change this to your actual input file path
+output_file_path = "C:\\Users\\amith\\Desktop\\Py\\SNMP\\SNMP.csv"  # Change this to your desired output file path
+
+snmp_data = parse_snmp_output(input_file_path)
+
+export_to_csv(snmp_data, output_file_path)
