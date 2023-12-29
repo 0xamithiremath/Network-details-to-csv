@@ -1,0 +1,28 @@
+import csv
+
+def parse_cisco_output(input_file_path, output_file_path):
+    with open(input_file_path, 'r') as file:
+        lines = file.readlines()
+
+    start_index = next(i for i, line in enumerate(lines) if 'Port' in line)
+    headers = lines[start_index].split()
+
+    data = []
+    for line in lines[start_index + 1:]:
+        if line.strip():  # Skip empty lines
+            parts = line.split()
+            # Adjust for lines where 'Name' is empty
+            if len(parts) == 6:
+                parts.insert(1, '')
+            data.append(parts)
+
+    with open(output_file_path, 'w', newline='') as csvfile:
+        writer = csv.writer(csvfile)
+        writer.writerow(headers)
+        writer.writerows(data)
+
+# Specify your input and output file paths here
+input_file_path = 'C:\\Users\\amith\\Desktop\Py\\Interface Status\\Interface Status.txt'  # Replace with your input file path
+output_file_path = 'C:\\Users\\amith\\Desktop\Py\\Interface Status\\Interface Status.csv'  # Replace with your output file path
+
+parse_cisco_output(input_file_path, output_file_path)
