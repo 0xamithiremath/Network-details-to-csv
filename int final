@@ -7,6 +7,7 @@ def parse_interfaces(file_content):
     status_protocol_pattern = re.compile(r'^(?P<interface>Vlan\d+|FastEthernet\d+/\d+|GigabitEthernet\d+/\d+/\d+) is (?P<status>\w+), line protocol is (?P<protocol>\w+)', re.MULTILINE)
     ip_address_pattern = re.compile(r'Internet address is (?P<ip_address>[\d\.]+/\d+)')
     speed_mtu_bw_pattern = re.compile(r'MTU (?P<mtu>\d+) bytes, BW (?P<bandwidth>\d+) Kbit.*')
+    speed_pattern = re.compile(r'(?P<speed>\d+Mb/s|\d+Gb/s|Auto-speed)', re.MULTILINE)
     last_input_pattern = re.compile(r'Last input (?P<last_input>[^,]+),')
 
     interfaces_data = {}
@@ -18,6 +19,7 @@ def parse_interfaces(file_content):
             'status': '',
             'protocol': '',
             'ip_address': '',
+            'speed': '',
             'mtu': '',
             'bandwidth': '',
             'last_input': ''
@@ -52,6 +54,10 @@ def parse_interfaces(file_content):
             data['mtu'] = speed_mtu_bw_match.group('mtu')
             data['bandwidth'] = speed_mtu_bw_match.group('bandwidth')
 
+        speed_match = speed_pattern.search(interface_block)
+        if speed_match:
+            data['speed'] = speed_match.group('speed')
+
         last_input_match = last_input_pattern.search(interface_block)
         if last_input_match:
             data['last_input'] = last_input_match.group('last_input')
@@ -65,7 +71,7 @@ def main(file_path, output_csv_path):
     parsed_data = parse_interfaces(file_content)
 
     with open(output_csv_path, 'w', newline='') as csvfile:
-        fieldnames = ['interface', 'description', 'status', 'protocol', 'ip_address', 'mtu', 'bandwidth', 'last_input']
+        fieldnames = ['interface', 'description', 'status', 'protocol', 'ip_address', 'speed', 'mtu', 'bandwidth', 'last_input']
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 
         writer.writeheader()
@@ -73,6 +79,7 @@ def main(file_path, output_csv_path):
             writer.writerow({'interface': interface, **data})
 
 if __name__ == "__main__":
-    input_file_path = 'C:\\Users\\-------\\Desktop\\Py\\int\\int.txt'  # Replace with the path to your input file
-    output_file_path = 'C:\\Users\\-------\\Desktop\\Py\\int\\int.csv'  # Replace with the desired output CSV file path
+    input_file_path = 'path_to_your_input_file.txt'  # Replace with the path to your input file
+    output_file_path = 'path_to_your_output_file.csv'  # Replace with the desired output CSV file path
     main(input_file_path, output_file_path)
+
