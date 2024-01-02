@@ -1,0 +1,16 @@
+
+
+1. Download the "Python Scripts for Data Processing.zip".
+2. extract the ZIP file.
+3. the filder contains 9 different folders for 9 different command outputs.
+4. Each folder contains a python [.py] file and a text [.txt] file.
+5. Right click on the [.py] file and open with notepad.
+6. Each Python Script contains the path to a text file and a path to a csv file which looks like this :
+# Paths to the input and output files
+input_file_path = 'C:\\Users\\-------\\Desktop\\Py\\Etherchannel\\Etherchannel.txt'  # Replace with your input file path
+output_file_path = 'C:\\Users\\-------\\Desktop\\Py\\Etherchannel\\Etherchannel.csv' # Replace with your output file path.
+
+7. Edit that with your own path and save the script. 
+Note : Remember to add 2 forward slashes [\\] at each folder location.
+8. Copy only the specific command output to the Text file accordingly.
+9. Double click or run the .py script and it will generate a excel sheet with all the required value required for you to just copy and paste.
