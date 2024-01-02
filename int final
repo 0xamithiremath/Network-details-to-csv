@@ -1,0 +1,78 @@
+import re
+import csv
+
+def parse_interfaces(file_content):
+    interface_pattern = re.compile(r'^(?P<interface>Vlan\d+|FastEthernet\d+/\d+|GigabitEthernet\d+/\d+/\d+).*', re.MULTILINE)
+    description_pattern = re.compile(r'^  Description: (.+)$', re.MULTILINE)
+    status_protocol_pattern = re.compile(r'^(?P<interface>Vlan\d+|FastEthernet\d+/\d+|GigabitEthernet\d+/\d+/\d+) is (?P<status>\w+), line protocol is (?P<protocol>\w+)', re.MULTILINE)
+    ip_address_pattern = re.compile(r'Internet address is (?P<ip_address>[\d\.]+/\d+)')
+    speed_mtu_bw_pattern = re.compile(r'MTU (?P<mtu>\d+) bytes, BW (?P<bandwidth>\d+) Kbit.*')
+    last_input_pattern = re.compile(r'Last input (?P<last_input>[^,]+),')
+
+    interfaces_data = {}
+
+    for match in interface_pattern.finditer(file_content):
+        interface = match.group('interface')
+        interfaces_data[interface] = {
+            'description': '',
+            'status': '',
+            'protocol': '',
+            'ip_address': '',
+            'mtu': '',
+            'bandwidth': '',
+            'last_input': ''
+        }
+
+    for match in description_pattern.finditer(file_content):
+        description = match.group(1)
+        preceding_interface = file_content.rfind('Vlan', 0, match.start())
+        preceding_fe = file_content.rfind('FastEthernet', 0, match.start())
+        preceding_ge = file_content.rfind('GigabitEthernet', 0, match.start())
+        closest_interface_position = max(preceding_interface, preceding_fe, preceding_ge)
+        closest_interface_match = interface_pattern.search(file_content, pos=closest_interface_position)
+        if closest_interface_match:
+            closest_interface = closest_interface_match.group('interface')
+            interfaces_data[closest_interface]['description'] = description
+
+    for match in status_protocol_pattern.finditer(file_content):
+        interface = match.group('interface')
+        interfaces_data[interface]['status'] = match.group('status')
+        interfaces_data[interface]['protocol'] = match.group('protocol')
+
+    for interface, data in interfaces_data.items():
+        start, end = interface_pattern.search(file_content, file_content.find(interface)).span()
+        interface_block = file_content[start:file_content.find('!', start)]
+
+        ip_address_match = ip_address_pattern.search(interface_block)
+        if ip_address_match:
+            data['ip_address'] = ip_address_match.group('ip_address')
+
+        speed_mtu_bw_match = speed_mtu_bw_pattern.search(interface_block)
+        if speed_mtu_bw_match:
+            data['mtu'] = speed_mtu_bw_match.group('mtu')
+            data['bandwidth'] = speed_mtu_bw_match.group('bandwidth')
+
+        last_input_match = last_input_pattern.search(interface_block)
+        if last_input_match:
+            data['last_input'] = last_input_match.group('last_input')
+
+    return interfaces_data
+
+def main(file_path, output_csv_path):
+    with open(file_path, 'r') as file:
+        file_content = file.read()
+
+    parsed_data = parse_interfaces(file_content)
+
+    with open(output_csv_path, 'w', newline='') as csvfile:
+        fieldnames = ['interface', 'description', 'status', 'protocol', 'ip_address', 'mtu', 'bandwidth', 'last_input']
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+
+        writer.writeheader()
+        for interface, data in parsed_data.items():
+            writer.writerow({'interface': interface, **data})
+
+if __name__ == "__main__":
+    input_file_path = 'C:\\Users\\-------\\Desktop\\Py\\int\\int.txt'  # Replace with the path to your input file
+    output_file_path = 'C:\\Users\\-------\\Desktop\\Py\\int\\int.csv'  # Replace with the desired output CSV file path
+    main(input_file_path, output_file_path)
